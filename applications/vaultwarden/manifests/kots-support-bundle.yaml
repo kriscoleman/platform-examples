@@ -1,0 +1,41 @@
+apiVersion: troubleshoot.sh/v1beta2
+kind: SupportBundle
+metadata:
+  name: vaultwarden
+spec:
+  collectors:
+    - clusterInfo: {}
+    - clusterResources: {}
+    - logs:
+        selector:
+          - app.kubernetes.io/name=vaultwarden
+        limits:
+          maxLines: 10000
+  analyzers:
+    - deploymentStatus:
+        name: vaultwarden
+        outcomes:
+          - fail:
+              when: "< 1"
+              message: The Vaultwarden deployment does not have any ready replicas.
+          - pass:
+              message: The Vaultwarden deployment is running.
+    - clusterPodStatuses:
+        outcomes:
+          - fail:
+              when: "!= Healthy"
+              message: "Pod {{ .Name }} is unhealthy: {{ .Status.Reason }}"
+    - containerRuntime:
+        outcomes:
+          - fail:
+              when: "== gvisor"
+              message: The gVisor container runtime is not supported.
+          - pass:
+              message: A supported container runtime is present on all nodes.
+    - storageClass:
+        checkName: Check for default storage class
+        outcomes:
+          - fail:
+              message: No default storage class found.
+          - pass:
+              message: Default storage class found.

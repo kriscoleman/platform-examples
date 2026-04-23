@@ -1,0 +1,16 @@
+---
+apiVersion: v2
+name: vaultwarden
+description: A Helm chart for Vaultwarden - a lightweight Bitwarden-compatible password manager server
+type: application
+version: 0.1.0
+appVersion: 1.32.7
+kubeVersion: '>=1.26.0-0'
+maintainers:
+  - name: kriscoleman
+    url: https://github.com/kriscoleman
+dependencies:
+  - name: replicated
+    version: '^1.0.0'
+    repository: 'oci://registry.replicated.com/library'
+    condition: replicated.enabled

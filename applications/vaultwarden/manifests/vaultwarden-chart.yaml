@@ -1,0 +1,63 @@
+apiVersion: kots.io/v1beta2
+kind: HelmChart
+metadata:
+  name: vaultwarden
+spec:
+  chart:
+    name: vaultwarden
+    chartVersion: 0.1.0
+  weight: 10
+  helmUpgradeFlags:
+    - --wait
+    - --timeout
+    - 300s
+  builder: {}
+  values:
+    env:
+      DOMAIN: 'repl{{ ConfigOption "vaultwarden_domain" }}'
+      SIGNUPS_ALLOWED: 'repl{{ ConfigOption "vaultwarden_signups_allowed" }}'
+      ADMIN_TOKEN: 'repl{{ ConfigOption "vaultwarden_admin_token" }}'
+      LOG_LEVEL: 'repl{{ ConfigOption "vaultwarden_log_level" }}'
+    persistence:
+      size: 'repl{{ ConfigOption "storage_size" }}'
+      storageClass: 'repl{{ ConfigOption "storage_class" }}'
+    ingress:
+      className: 'repl{{ ConfigOption "ingress_class" }}'
+      hosts:
+        - host: 'repl{{ ConfigOption "ingress_host" }}'
+          paths:
+            - path: /
+              pathType: Prefix
+  optionalValues:
+    # Database type: external postgres
+    - when: 'repl{{ ConfigOptionEquals "database_type" "external_postgres" }}'
+      recursiveMerge: true
+      values:
+        database:
+          type: external_postgres
+          url: 'repl{{ ConfigOption "external_postgres_url" }}'
+    # Database type: sqlite (default)
+    - when: 'repl{{ ConfigOptionEquals "database_type" "sqlite" }}'
+      recursiveMerge: true
+      values:
+        database:
+          type: sqlite
+    # Ingress enabled
+    - when: 'repl{{ ConfigOptionEquals "ingress_enabled" "1" }}'
+      recursiveMerge: true
+      values:
+        ingress:
+          enabled: true
+    # Ingress disabled
+    - when: 'repl{{ ConfigOptionEquals "ingress_enabled" "0" }}'
+      recursiveMerge: true
+      values:
+        ingress:
+          enabled: false
+    # Air-gap image rewriting
+    - when: 'repl{{ HasLocalRegistry }}'
+      recursiveMerge: true
+      values:
+        image:
+          repository: 'repl{{ LocalRegistryHost }}/repl{{ LocalRegistryNamespace }}/server'
+          pullPolicy: IfNotPresent

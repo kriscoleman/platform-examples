@@ -1,0 +1,94 @@
+# -- Number of Vaultwarden replicas
+replicaCount: 1
+
+image:
+  # -- Vaultwarden image repository
+  repository: vaultwarden/server
+  # -- Vaultwarden image tag
+  tag: 1.32.7
+  # -- Image pull policy
+  pullPolicy: IfNotPresent
+
+# -- Image pull secrets
+imagePullSecrets: []
+
+# -- Override the name of the chart
+nameOverride: ""
+# -- Override the full name of the chart
+fullnameOverride: ""
+
+serviceAccount:
+  # -- Whether to create a service account
+  create: true
+  # -- Annotations for the service account
+  annotations: {}
+  # -- Name of the service account
+  name: ""
+
+# -- Pod annotations
+podAnnotations: {}
+
+# -- Pod security context
+podSecurityContext: {}
+
+# -- Container security context
+securityContext: {}
+
+service:
+  # -- Service type
+  type: ClusterIP
+  # -- Service port
+  port: 80
+
+ingress:
+  # -- Whether to create an Ingress
+  enabled: false
+  # -- Ingress class name
+  className: ""
+  # -- Ingress annotations
+  annotations: {}
+  # -- Ingress hosts
+  hosts:
+    - host: vaultwarden.local
+      paths:
+        - path: /
+          pathType: Prefix
+  # -- Ingress TLS configuration
+  tls: []
+
+# -- Container resources
+resources: {}
+
+persistence:
+  # -- Whether to enable persistence
+  enabled: true
+  # -- Storage class for the PVC
+  storageClass: ""
+  # -- Access modes
+  accessModes:
+    - ReadWriteOnce
+  # -- PVC size
+  size: 10Gi
+
+# -- Vaultwarden environment variables
+env:
+  # -- Domain for Vaultwarden (used for email links, etc.)
+  DOMAIN: "https://vaultwarden.local"
+  # -- Enable signups
+  SIGNUPS_ALLOWED: "true"
+  # -- Enable admin panel
+  ADMIN_TOKEN: ""
+  # -- Log level
+  LOG_LEVEL: "info"
+
+# -- Database configuration
+database:
+  # -- Database type: sqlite or external_postgres
+  type: sqlite
+  # -- External postgres connection URL (when type is external_postgres)
+  # Format: postgresql://user:password@host:port/database
+  url: ""
+
+# -- Replicated SDK configuration
+replicated:
+  enabled: true
