@@ -1,0 +1,133 @@
+---
+apiVersion: kots.io/v1beta1
+kind: Config
+metadata:
+  name: vaultwarden
+spec:
+  groups:
+    # Application settings
+    - name: app_settings
+      title: Application Settings
+      description: Configure Vaultwarden application settings
+      items:
+        - name: vaultwarden_domain
+          title: Vaultwarden Domain
+          help_text: |
+            The domain where Vaultwarden will be accessible (e.g., https://vault.example.com).
+            This is used for generating email links and configuring the web vault.
+          type: text
+          default: "https://vaultwarden.example.com"
+          required: true
+        - name: vaultwarden_signups_allowed
+          title: Allow Signups
+          help_text: Whether to allow new user registrations.
+          type: bool
+          default: "1"
+        - name: vaultwarden_admin_token
+          title: Admin Panel Token
+          help_text: |
+            Token for accessing the /admin panel. Leave empty to disable the admin panel.
+            A random token is auto-generated; change it if needed.
+          type: password
+          hidden: true
+          value: '{{repl RandomString 48}}'
+        - name: vaultwarden_log_level
+          title: Log Level
+          type: select_one
+          default: info
+          items:
+            - name: trace
+              title: Trace
+            - name: debug
+              title: Debug
+            - name: info
+              title: Info
+            - name: warn
+              title: Warn
+            - name: error
+              title: Error
+
+    # Database settings
+    - name: database_settings
+      title: Database
+      description: Configure the database backend for Vaultwarden
+      items:
+        - name: database_type
+          title: Database Type
+          help_text: |
+            SQLite is simple and suitable for small deployments. External PostgreSQL
+            is recommended for production use with multiple users.
+          type: select_one
+          default: sqlite
+          items:
+            - name: sqlite
+              title: SQLite (Embedded)
+            - name: external_postgres
+              title: External PostgreSQL
+        - name: external_postgres_url
+          title: PostgreSQL Connection URL
+          help_text: |
+            Full connection URL, e.g.: postgresql://user:password@host:5432/vaultwarden
+          type: text
+          when: '{{repl ConfigOptionEquals "database_type" "external_postgres"}}'
+          required: true
+
+    # Storage settings
+    - name: storage_settings
+      title: Storage
+      description: Configure persistent storage for Vaultwarden data
+      items:
+        - name: storage_size
+          title: Data Volume Size
+          help_text: Size of the persistent volume for Vaultwarden data (attachments, icons, etc.)
+          type: text
+          default: "10Gi"
+        - name: storage_class
+          title: Storage Class
+          help_text: Leave empty to use the cluster default storage class.
+          type: text
+          default: ""
+
+    # Ingress settings
+    - name: ingress_settings
+      title: Ingress
+      description: Configure ingress for accessing Vaultwarden
+      when: 'repl{{ ne Distribution "embedded-cluster" }}'
+      items:
+        - name: ingress_enabled
+          title: Enable Ingress
+          type: bool
+          default: "0"
+        - name: ingress_class
+          title: Ingress Class Name
+          type: text
+          default: "nginx"
+          when: '{{repl ConfigOptionEquals "ingress_enabled" "1"}}'
+        - name: ingress_host
+          title: Ingress Hostname
+          type: text
+          default: "vaultwarden.example.com"
+          when: '{{repl ConfigOptionEquals "ingress_enabled" "1"}}'
+          required: true
+        - name: ingress_tls_type
+          title: TLS Type
+          type: select_one
+          default: none
+          when: '{{repl ConfigOptionEquals "ingress_enabled" "1"}}'
+          items:
+            - name: none
+              title: None
+            - name: self_signed
+              title: Self Signed
+            - name: user_provided
+              title: User Provided
+        - name: ingress_tls_cert
+          title: TLS Certificate
+          type: file
+          when: '{{repl and (ConfigOptionEquals "ingress_enabled" "1") (ConfigOptionEquals "ingress_tls_type" "user_provided")}}'
+          required: true
+        - name: ingress_tls_key
+          title: TLS Private Key
+          type: file
+          when: '{{repl and (ConfigOptionEquals "ingress_enabled" "1") (ConfigOptionEquals "ingress_tls_type" "user_provided")}}'
+          required: true

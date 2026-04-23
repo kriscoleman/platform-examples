@@ -1,0 +1,53 @@
+apiVersion: troubleshoot.sh/v1beta2
+kind: Preflight
+metadata:
+  name: vaultwarden
+spec:
+  analyzers:
+    - clusterVersion:
+        outcomes:
+          - fail:
+              when: "< 1.26.0"
+              message: Vaultwarden requires Kubernetes 1.26.0 or later.
+              uri: https://kubernetes.io
+          - pass:
+              message: Kubernetes version is compatible.
+    - nodeResources:
+        checkName: CPU capacity
+        outcomes:
+          - fail:
+              when: "sum(cpuAllocatable) < 1"
+              message: The cluster must have at least 1 CPU core allocatable.
+          - warn:
+              when: "sum(cpuAllocatable) < 2"
+              message: The cluster has less than 2 CPU cores allocatable. This may affect performance.
+          - pass:
+              message: The cluster has sufficient CPU resources.
+    - nodeResources:
+        checkName: Memory capacity
+        outcomes:
+          - fail:
+              when: "sum(memoryAllocatable) < 1073741824"
+              message: The cluster must have at least 1 GiB of allocatable memory.
+          - warn:
+              when: "sum(memoryAllocatable) < 2147483648"
+              message: The cluster has less than 2 GiB of allocatable memory. This may affect performance.
+          - pass:
+              message: The cluster has sufficient memory.
+    - storageClass:
+        checkName: Default storage class
+        outcomes:
+          - fail:
+              message: No default storage class found. Vaultwarden requires persistent storage.
+          - pass:
+              message: A default storage class is available.
+    - containerRuntime:
+        outcomes:
+          - fail:
+              when: "== gvisor"
+              message: Vaultwarden does not support the gVisor container runtime.
+          - pass:
+              message: A supported container runtime is present on all nodes.
+  collectors:
+    - clusterInfo: {}
+    - clusterResources: {}
